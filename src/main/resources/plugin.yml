@@ -1,0 +1,14 @@
+name: ShapeAPI
+version: '${project.version}'
+main: de.cyklon.shapeapi.ShapeAPI
+api-version: 1.19
+authors: [ Cyklon73 ]
+website: https://cyklon-development.ml
+
+permissions:
+  shape-api.command.version:
+    default: op
+
+commands:
+  version:
+    permission: shape-api.command.version
