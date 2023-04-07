@@ -12,3 +12,4 @@ permissions:
 commands:
   version:
     permission: shape-api.command.version
+  test:
