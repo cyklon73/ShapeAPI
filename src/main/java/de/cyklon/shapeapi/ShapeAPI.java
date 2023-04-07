@@ -1,10 +1,8 @@
 package de.cyklon.shapeapi;
 
 import de.cyklon.shapeapi.particle.ParticleController;
-import de.cyklon.shapeapi.shapes.Circle;
-import de.cyklon.shapeapi.shapes.Line;
-import de.cyklon.shapeapi.shapes.Rectangle;
-import de.cyklon.shapeapi.shapes.Shape;
+import de.cyklon.shapeapi.shapes.*;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -17,14 +15,18 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class ShapeAPI extends JavaPlugin {
 
+    public static final int ALL = -1;
+
     private static long renderC = 0;
     private static int ID = 0;
     private static final List<Shape> shapes = new ArrayList<>();
+    private static final ArrayDeque<Integer> destroyQueue = new ArrayDeque<>();
 
     private static BukkitRunnable renderTask;
 
@@ -34,11 +36,26 @@ public final class ShapeAPI extends JavaPlugin {
     public void onEnable() {
         INSTANCE = this;
 
+
         getCommand("version").setExecutor(this);
+        getCommand("test").setExecutor(this);
 
         renderTask = new BukkitRunnable() {
             @Override
             public void run() {
+                while (!destroyQueue.isEmpty()) {
+                    int id = destroyQueue.remove();
+                    if (id==ALL) {
+                        shapes.clear();
+                        return;
+                    }
+                    for (int i = 0; i < shapes.size(); i++) {
+                        if (shapes.get(i).getID()==id) {
+                            shapes.remove(i);
+                            return;
+                        }
+                    }
+                }
                 for (Shape shape : shapes) shape.render();
                 renderC++;
             }
@@ -55,37 +72,48 @@ public final class ShapeAPI extends JavaPlugin {
     public boolean onCommand(CommandSender sender, @NotNull Command command, String label, String[] args) {
         switch (command.getName()) {
             case "version" -> sender.sendMessage(ChatColor.GREEN + "Current Version" + ChatColor.DARK_GRAY + ":" + ChatColor.GRAY + getDescription().getVersion() + "");
-            /*case "test" -> {
+            case "test" -> {
                 if (sender instanceof Player player) {
-                    if (args.length==2) {
+                    if (args[0].equals("rect")) {
                         try {
-                            createRectangle(player.getLocation(), Integer.parseInt(args[0]), Integer.parseInt(args[1]), point -> () -> Particle.VILLAGER_ANGRY);
+                            createRectangle(player.getLocation(), Integer.parseInt(args[1]), Integer.parseInt(args[2]), point -> () -> Particle.VILLAGER_ANGRY);
                             player.sendMessage(ChatColor.GREEN + "Created Rectangle!");
                         } catch (Exception e) {
                             player.sendMessage(ChatColor.RED + "Error:\n" + e);
                         }
-                    } else if (args.length==1) {
+                    } else if (args[0].equals("circle")) {
                         try {
-                            createCircle(player.getLocation(), Integer.parseInt(args[0]), -2, point -> () -> Particle.VILLAGER_ANGRY);
+                            createCircle(player.getLocation(), Integer.parseInt(args[1]), -2, point -> () -> Particle.VILLAGER_ANGRY);
                             player.sendMessage(ChatColor.GREEN + "Created Circle!");
                         } catch (Exception e) {
                             player.sendMessage(ChatColor.RED + "Error:\n" + e);
                         }
-                    } else if (args.length==0) {
+                    } else if (args[0].equals("triangle")) {
+                        try {
+                            createTriangle(player.getLocation(), Double.parseDouble(args[1]), point -> () -> Particle.VILLAGER_ANGRY);
+                            player.sendMessage(ChatColor.GREEN + "Created Triangle!");
+                        } catch (Exception e) {
+                            player.sendMessage(ChatColor.RED + "Error:\n" + e);
+                        }
+                    } else if (args[0].equals("t1")) {
+                        Location loc = player.getLocation();
+                        final Circle[] circle = {null};
+                        final Double[] i = {0D};
                         new BukkitRunnable() {
                             @Override
                             public void run() {
-                                for (int i = 0; i < 10; i++) {
-                                    drawCircle(player.getLocation().add(0, i, 0), 2, point -> () -> Particle.VILLAGER_ANGRY);
-                                    try {
-                                        Thread.sleep(100);
-                                    } catch (InterruptedException ignored) {}
+                                if (circle[0]!=null) circle[0].destroy();
+                                circle[0] = createCircle(new Location(loc.getWorld(), loc.getX(), loc.getY()+i[0], loc.getZ()), 2, point -> () -> Particle.VILLAGER_ANGRY);
+                                i[0]+=0.1;
+                                if (i[0]>3) {
+                                    circle[0].destroy();
+                                    cancel();
                                 }
                             }
-                        }.runTaskAsynchronously(this);
+                        }.runTaskTimerAsynchronously(this, 0, 1);
                     }
                 }
-            }*/
+            }
         }
         return false;
     }
@@ -98,14 +126,8 @@ public final class ShapeAPI extends JavaPlugin {
         return null;
     }
 
-    public boolean destroy(int id) {
-        for (int i = 0; i < shapes.size(); i++) {
-            if (shapes.get(i).getID()==id) {
-                shapes.remove(i);
-                return true;
-            }
-        }
-        return false;
+    public void destroy(int id) {
+        destroyQueue.add(id);
     }
 
     private void destroyAfterRender(Shape shape) {
@@ -123,6 +145,44 @@ public final class ShapeAPI extends JavaPlugin {
         }.runTaskAsynchronously(this);
     }
 
+    public Triangle createTriangle(Location location, double sideLength, ParticleController controller) {
+        int id_ = ID;
+        Triangle triangle = new Triangle() {
+            @Override
+            public double getSideLenght() {
+                return sideLength;
+            }
+
+            @Override
+            public int getID() {
+                return id_;
+            }
+
+            @Override
+            public Location getLocation() {
+                return location;
+            }
+
+            @Override
+            public Vector getRotation() {
+                return new Vector(0, 0, 0);
+            }
+
+            @Override
+            public ParticleController getParticleController() {
+                return controller;
+            }
+
+            @Override
+            public void destroy() {
+                ShapeAPI.this.destroy(getID());
+            }
+        };
+        ID++;
+        shapes.add(triangle);
+        return triangle;
+    }
+
     public void drawCircle(Location location, double radius, int segments, ParticleController controller) {
         destroyAfterRender(createCircle(location, radius, segments, controller));
     }
@@ -136,6 +196,7 @@ public final class ShapeAPI extends JavaPlugin {
     }
 
     public Circle createCircle(Location location, double radius, int segments, ParticleController controller) {
+        int id_ = ID;
         Circle circle = new Circle() {
             @Override
             public double getRadius() {
@@ -149,7 +210,7 @@ public final class ShapeAPI extends JavaPlugin {
 
             @Override
             public int getID() {
-                return ID;
+                return id_;
             }
 
             @Override

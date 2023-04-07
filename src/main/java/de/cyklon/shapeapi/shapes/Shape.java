@@ -50,4 +50,5 @@ public interface Shape {
     default RenderManager getRenderManager() {
         return RenderManager.get(getID());
     }
+
 }
