@@ -1,6 +1,7 @@
 package de.cyklon.shapeapi.shapes;
 
 
+import de.cyklon.shapeapi.ShapeSetting;
 import de.cyklon.shapeapi.particle.ParticleController;
 import de.cyklon.shapeapi.shapes.renderer.RenderManager;
 import de.cyklon.shapeapi.shapes.renderer.ShapeRenderer;
@@ -30,6 +31,17 @@ public interface Shape {
     ParticleController getParticleController();
 
     void destroy();
+
+    default boolean renderOnlyVisible() {
+        return getSettings().getBoolean("renderOnlyVisible");
+    }
+
+    default void setRenderOnlyVisible(boolean renderOnlyVisible) {
+        getSettings().set("renderOnlyVisible", renderOnlyVisible);
+    }
+
+
+    ShapeSetting getSettings();
 
     /**
      * segments meaning:

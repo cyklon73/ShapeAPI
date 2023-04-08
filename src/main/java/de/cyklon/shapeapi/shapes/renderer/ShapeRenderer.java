@@ -4,6 +4,7 @@ import de.cyklon.shapeapi.particle.ParticleController;
 import de.cyklon.shapeapi.particle.ParticleData;
 import de.cyklon.shapeapi.shapes.Shape;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.util.Vector;
 
@@ -22,6 +23,7 @@ public abstract class ShapeRenderer {
     protected void doRender(Shape shape, World world) {
         int currPoint = 0;
         for (Location point : points) {
+            if (shape.renderOnlyVisible() && point.getBlock().getType().isSolid() && point.getBlock().getType()!= Material.GLASS) continue;
             ParticleData data = particleController.getData(currPoint);
             world.spawnParticle(data.getParticle(), point, data.getCount(), 0, 0, 0, data.getData());
             currPoint++;

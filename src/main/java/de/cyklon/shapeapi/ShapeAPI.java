@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public final class ShapeAPI extends JavaPlugin {
@@ -26,6 +27,7 @@ public final class ShapeAPI extends JavaPlugin {
     private static long renderC = 0;
     private static int ID = 0;
     private static final List<Shape> shapes = new ArrayList<>();
+    private static final HashMap<Integer, ShapeSetting> settings = new HashMap<>();
     private static final ArrayDeque<Integer> destroyQueue = new ArrayDeque<>();
 
     private static BukkitRunnable renderTask;
@@ -177,6 +179,11 @@ public final class ShapeAPI extends JavaPlugin {
             public void destroy() {
                 ShapeAPI.this.destroy(getID());
             }
+
+            @Override
+            public ShapeSetting getSettings() {
+                return settings.get(getID());
+            }
         };
         ID++;
         shapes.add(triangle);
@@ -232,6 +239,11 @@ public final class ShapeAPI extends JavaPlugin {
             public void destroy() {
                 ShapeAPI.this.destroy(getID());
             }
+
+            @Override
+            public ShapeSetting getSettings() {
+                return settings.get(getID());
+            }
         };
         ID++;
         shapes.add(circle);
@@ -278,6 +290,11 @@ public final class ShapeAPI extends JavaPlugin {
             public void destroy() {
                 ShapeAPI.this.destroy(getID());
             }
+
+            @Override
+            public ShapeSetting getSettings() {
+                return settings.get(getID());
+            }
         };
         ID++;
         shapes.add(rectangle);
@@ -318,6 +335,11 @@ public final class ShapeAPI extends JavaPlugin {
             @Override
             public void destroy() {
                 ShapeAPI.this.destroy(getID());
+            }
+
+            @Override
+            public ShapeSetting getSettings() {
+                return settings.get(getID());
             }
         };
         ID++;
